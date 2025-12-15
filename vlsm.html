@@ -53,12 +53,6 @@ body {
     margin-bottom: 20px;
     border-radius: 15px;
     box-shadow: 0 8px 30px rgba(0,0,0,0.2);
-    transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.3);
 }
 
 input, select {
@@ -67,14 +61,7 @@ input, select {
     margin-bottom: 12px;
     border-radius: 10px;
     border: 1px solid #bdbdbd;
-    transition: border-color 0.3s, box-shadow 0.3s;
     font-size: 15px;
-}
-
-input:focus, select:focus {
-    border-color: #00796b;
-    box-shadow: 0 0 8px rgba(0,121,107,0.3);
-    outline: none;
 }
 
 button {
@@ -87,12 +74,6 @@ button {
     cursor: pointer;
     background: linear-gradient(135deg, #6a11cb, #2575fc);
     color: white;
-    transition: background 0.3s, transform 0.2s, box-shadow 0.2s;
-}
-
-button:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 12px rgba(0,0,0,0.3);
 }
 
 button.cerrar {
@@ -102,15 +83,10 @@ button.cerrar {
     font-size: 14px;
 }
 
-button.cerrar:hover {
-    background: #f44336;
-}
-
 .input-group {
     display: grid;
     grid-template-columns: 2fr 1fr 1fr;
     gap: 12px;
-    margin-bottom: 15px;
 }
 
 .subredes-container {
@@ -120,60 +96,35 @@ button.cerrar:hover {
     margin: 20px 0;
 }
 
-.subred-input-group {
-    display: flex;
-    flex-direction: column;
-}
-
 .subred-input-group label {
     font-weight: bold;
-    color: #333;
-    margin-bottom: 5px;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 20px;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
 th, td {
-    border: 2px solid #333; 
+    border: 2px solid #333;
     padding: 10px;
     text-align: center;
     font-weight: bold;
 }
 
-th {
-    background: #ddd;
-    font-size: 14px;
-}
+th { background: #ddd; }
 
 th:nth-child(1), td:nth-child(1) { background: #00bcd4; color: white; }
 th:nth-child(2), td:nth-child(2) { background: #ffeb3b; color: black; }
-th:nth-child(3), td:nth-child(3) { background: #4caf50; color: white; }
-th:nth-child(4), td:nth-child(4) { background: #9c27b0; color: white; }
-th:nth-child(5), td:nth-child(5) { background: #ff9800; color: white; }
-th:nth-child(6), td:nth-child(6) { background: #03a9f4; color: white; }
-th:nth-child(7), td:nth-child(7) { background: #e91e63; color: white; }
-th:nth-child(8), td:nth-child(8) { background: #f44336; color: white; }
+th:nth-child(3), td:nth-child(3) { background: #607d8b; color: white; }
+th:nth-child(4), td:nth-child(4) { background: #4caf50; color: white; }
+th:nth-child(5), td:nth-child(5) { background: #9c27b0; color: white; }
+th:nth-child(6), td:nth-child(6) { background: #ff9800; color: white; }
+th:nth-child(7), td:nth-child(7) { background: #03a9f4; color: white; }
+th:nth-child(8), td:nth-child(8) { background: #e91e63; color: white; }
+th:nth-child(9), td:nth-child(9) { background: #f44336; color: white; }
 
-table tr:hover td {
-    opacity: 0.8;
-}
-
-@media (max-width: 768px) {
-    .input-group {
-        grid-template-columns: 1fr;
-    }
-    
-    .subredes-container {
-        grid-template-columns: 1fr;
-    }
-}
 </style>
 </head>
 <body>
@@ -187,8 +138,8 @@ table tr:hover td {
     <div class="card">
         <div class="input-group">
             <input type="text" id="ipBase" placeholder="IP de red base (ej: 192.168.1.0)">
-            <input type="number" id="prefijoBase" placeholder="Prefijo (ej: 24)" min="0" max="32">
-            <input type="number" id="numSubredes" placeholder="Número de subredes" min="1" max="20">
+            <input type="number" id="prefijoBase" placeholder="Prefijo (ej: 24)">
+            <input type="number" id="numSubredes" placeholder="Número de subredes">
         </div>
         <button onclick="crearInputs()">Crear Campos de Subredes</button>
     </div>
@@ -201,11 +152,12 @@ table tr:hover td {
 
     <div class="card" id="resultadosCard" style="display:none;">
         <h3>📊 Resultados</h3>
-        <table id="tablaVLSM">
+        <table>
             <thead>
                 <tr>
                     <th>SR</th>
                     <th>Hosts</th>
+                    <th>Hosts encontrados</th>
                     <th>Prefijo</th>
                     <th>Red</th>
                     <th>Máscara</th>
@@ -214,158 +166,81 @@ table tr:hover td {
                     <th>Broadcast</th>
                 </tr>
             </thead>
-            <tbody></tbody>
+            <tbody id="tablaVLSM"></tbody>
         </table>
     </div>
 </div>
 
-<!-- Supabase SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase-config.js"></script>
-
 <script>
-// Proteger la página
-window.addEventListener('DOMContentLoaded', () => {
-  if (!protegerPagina()) {
-    return;
-  }
-});
-
-function ipToNumber(ip){ 
-  return ip.split('.').reduce((acc, oct) => acc * 256 + parseInt(oct), 0);
+function ipToNumber(ip){
+    return ip.split('.').reduce((a,b)=>a*256+parseInt(b),0);
 }
 
-function numberToIp(num){ 
-  return [24, 16, 8, 0].map(shift => (num >> shift) & 255).join('.');
+function numberToIp(num){
+    return [24,16,8,0].map(s=>(num>>s)&255).join('.');
 }
 
-function calcularMascara(hosts){
-    let bits = Math.ceil(Math.log2(hosts + 2));
-    let mask = 32 - bits;
-    let mascara = [];
-    for(let i = 3; i >= 0; i--){
-        if(mask >= 8){ 
-            mascara.push(255); 
-            mask -= 8; 
-        } else { 
-            mascara.push(256 - Math.pow(2, 8 - mask)); 
-            mask = 0; 
-        }
+function calcularMascara(bitsHost){
+    let mask = 32 - bitsHost;
+    let m = [];
+    for(let i=0;i<4;i++){
+        if(mask>=8){ m.push(255); mask-=8; }
+        else { m.push(256-Math.pow(2,8-mask)); mask=0; }
     }
-    return mascara.join('.');
+    return m.join('.');
 }
-
-let subredes = [];
-let siguienteRed = null;
 
 function crearInputs(){
-    const num = parseInt(document.getElementById("numSubredes").value);
-    const container = document.getElementById("subredesContainer");
-    
-    if (!num || num < 1 || num > 20) {
-        alert("Ingrese un número válido de subredes (1-20)");
-        return;
+    const n = numSubredes.value;
+    subredesContainer.innerHTML="";
+    for(let i=1;i<=n;i++){
+        subredesContainer.innerHTML+=`
+        <div class="subred-input-group">
+            <label>Subred ${i}</label>
+            <input type="number" id="hosts${i}" placeholder="Hosts requeridos">
+        </div>`;
     }
-    
-    container.innerHTML = "";
-    
-    for(let i = 1; i <= num; i++){
-        let div = document.createElement("div");
-        div.className = "subred-input-group";
-        div.innerHTML = `
-            <label>Subred ${i}:</label>
-            <input class="subredInput" type="number" placeholder="Cantidad de hosts" id="hosts${i}" min="1">
-        `;
-        container.appendChild(div);
-    }
-    
-    document.getElementById("btnCalcularCard").style.display = "block";
-    document.getElementById("resultadosCard").style.display = "none";
+    btnCalcularCard.style.display="block";
 }
 
 function calcularVLSM(){
-    const ipBase = document.getElementById("ipBase").value.trim();
-    const prefijoBase = parseInt(document.getElementById("prefijoBase").value);
-    const numSubredes = parseInt(document.getElementById("numSubredes").value);
-    
-    if(!ipBase || !prefijoBase || !numSubredes){ 
-        alert("Complete todos los campos"); 
-        return; 
+    let base = ipToNumber(ipBase.value);
+    let filas=[];
+    for(let i=1;i<=numSubredes.value;i++){
+        let h=parseInt(document.getElementById("hosts"+i).value);
+        filas.push(h);
     }
+    filas.sort((a,b)=>b-a);
 
-    // Validar formato de IP
-    const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
-    if (!ipRegex.test(ipBase)) {
-        alert("Formato de IP inválido");
-        return;
-    }
+    let tbody=document.getElementById("tablaVLSM");
+    tbody.innerHTML="";
+    let red=base;
 
-    // Validar prefijo
-    if (prefijoBase < 0 || prefijoBase > 32) {
-        alert("El prefijo debe estar entre 0 y 32");
-        return;
-    }
+    filas.forEach((hosts,i)=>{
+        let bits=Math.ceil(Math.log2(hosts+2));
+        let total=Math.pow(2,bits);
+        let encontrados=total-2;
 
-    // Recopilar hosts y validar
-    let hostsArray = [];
-    for(let i = 1; i <= numSubredes; i++){
-        let hosts = parseInt(document.getElementById(`hosts${i}`).value);
-        if(!hosts || hosts < 1){ 
-            alert(`Complete los hosts para la subred ${i}`); 
-            return; 
-        }
-        hostsArray.push({ index: i, hosts: hosts });
-    }
-
-    // Ordenar por cantidad de hosts (de mayor a menor)
-    hostsArray.sort((a, b) => b.hosts - a.hosts);
-
-    siguienteRed = ipBase;
-    let tbody = document.querySelector("#tablaVLSM tbody");
-    tbody.innerHTML = "";
-
-    for(let i = 0; i < hostsArray.length; i++){
-        let subred = hostsArray[i];
-        let hosts = subred.hosts;
-
-        let redNum = ipToNumber(siguienteRed);
-        let bitsHost = Math.ceil(Math.log2(hosts + 2));
-        let totalHosts = Math.pow(2, bitsHost);
-        let prefijoSubred = 32 - bitsHost;
-
-        let primera = numberToIp(redNum + 1);
-        let ultima = numberToIp(redNum + totalHosts - 2);
-        let broadcast = numberToIp(redNum + totalHosts - 1);
-        let mascara = calcularMascara(hosts);
-
-        let fila = `
-            <tr>
-                <td>${i + 1}</td>
-                <td>${hosts}</td>
-                <td>/${prefijoSubred}</td>
-                <td>${siguienteRed}</td>
-                <td>${mascara}</td>
-                <td>${primera}</td>
-                <td>${ultima}</td>
-                <td>${broadcast}</td>
-            </tr>
-        `;
-        tbody.insertAdjacentHTML('beforeend', fila);
-
-        siguienteRed = numberToIp(redNum + totalHosts);
-    }
-
-    document.getElementById("resultadosCard").style.display = "block";
-    
-    // Scroll suave hacia los resultados
-    document.getElementById("resultadosCard").scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'start' 
+        tbody.innerHTML+=`
+        <tr>
+            <td>${i+1}</td>
+            <td>${hosts}</td>
+            <td>${encontrados}</td>
+            <td>/${32-bits}</td>
+            <td>${numberToIp(red)}</td>
+            <td>${calcularMascara(bits)}</td>
+            <td>${numberToIp(red+1)}</td>
+            <td>${numberToIp(red+total-2)}</td>
+            <td>${numberToIp(red+total-1)}</td>
+        </tr>`;
+        red+=total;
     });
+
+    resultadosCard.style.display="block";
 }
 
-function volverInicio() {
-    window.location.href = "bienvenido.html";
+function volverInicio(){
+    window.location.href="bienvenido.html";
 }
 </script>
 
