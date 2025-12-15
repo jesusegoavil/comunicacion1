@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - VLSM Calculator</title>
+    <!-- ✅ USAR TU estilo.css -->
+    <link rel="stylesheet" href="estilo.css">
+</head>
+<body class="auth-body">
+
+    <div class="card">
+        <h2>📝 Registrar Cuenta</h2>
+        
+        <div id="mensaje" class="mensaje"></div>
+
+        <form id="formRegistro">
+            <label>Usuario:</label>
+            <input type="text" id="usuario" name="usuario" placeholder="Ingresa tu usuario" required autocomplete="username">
+            
+            <label>Contraseña:</label>
+            <input type="password" id="password" name="password" placeholder="Mínimo 6 caracteres" required autocomplete="new-password">
+            
+            <button type="submit">Crear Cuenta</button>
+        </form>
+
+        <p class="link" onclick="window.location.href='index.html'">
+            ¿Ya tienes cuenta? Iniciar Sesión
+        </p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const user = verificarSesion();
+            if (user) {
+                window.location.href = 'bienvenido.html';
+            }
+        });
+
+        document.getElementById("formRegistro").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            
+            const usuario = document.getElementById("usuario").value.trim();
+            const password = document.getElementById("password").value;
+            const mensaje = document.getElementById("mensaje");
+
+            if (!usuario || !password) {
+                mostrarMensaje(mensaje, "Complete todos los campos", "error");
+                return;
+            }
+
+            if (password.length < 6) {
+                mostrarMensaje(mensaje, "La contraseña debe tener al menos 6 caracteres", "error");
+                return;
+            }
+
+            mostrarMensaje(mensaje, "Registrando usuario...", "info");
+
+            const resultado = await registrarUsuario(usuario, password);
+
+            if (resultado.ok) {
+                mostrarMensaje(mensaje, "✅ Registro exitoso! Redirigiendo al login...", "exito");
+                document.getElementById("formRegistro").reset();
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+            } else {
+                mostrarMensaje(mensaje, resultado.msg, "error");
+            }
+        });
+
+        function mostrarMensaje(elemento, texto, tipo) {
+            elemento.textContent = texto;
+            elemento.className = `mensaje ${tipo}`;
+            elemento.style.display = 'block';
+        }
+    </script>
+
+</body>
+</html>

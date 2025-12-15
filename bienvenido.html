@@ -1,0 +1,69 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Bienvenido - VLSM Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- ✅ USAR TU estilo.css -->
+  <link rel="stylesheet" href="estilo.css">
+</head>
+<body class="bienvenido-body">
+
+  <button class="btn-logout" onclick="logout()" style="display: none;" id="btnLogout">
+    🚪 Cerrar Sesión
+  </button>
+
+  <div id="loadingScreen" class="loading">
+    <h2>⏳ Cargando...</h2>
+  </div>
+
+  <div id="mainContent" class="wrapper" style="display: none;">
+    <div class="container">
+      
+      <h2 id="titulo">¡Bienvenido!</h2>
+      
+      <div class="user-info">
+        👤 Usuario: <strong><span id="userName">Cargando...</span></strong>
+      </div>
+
+      <div class="button-group">
+        <button class="calc-button" onclick="window.location.href='vlsm.html'">
+          🔢 Calcular VLSM
+        </button>
+
+        <button class="calc-button" onclick="window.location.href='subredes.html'">
+          🌐 Calcular Direcciones de Red
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const user = verificarSesion();
+      
+      if (!user) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      document.getElementById('userName').textContent = user.username;
+      document.getElementById('loadingScreen').style.display = 'none';
+      document.getElementById('mainContent').style.display = 'flex';
+      document.getElementById('btnLogout').style.display = 'block';
+    });
+
+    function logout() {
+      if (confirm('¿Seguro que deseas cerrar sesión?')) {
+        logoutUsuario();
+        window.location.href = 'index.html';
+      }
+    }
+  </script>
+
+</body>
+</html>

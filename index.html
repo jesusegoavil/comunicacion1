@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - VLSM Calculator</title>
+    <!-- ✅ USAR TU estilo.css -->
+    <link rel="stylesheet" href="estilo.css">
+</head>
+<body class="auth-body">
+
+    <div class="card">
+        <h2>🔐 Iniciar Sesión</h2>
+        
+        <div id="mensaje" class="mensaje"></div>
+        
+        <input type="text" id="loginUser" placeholder="Usuario" autocomplete="username">
+        <input type="password" id="loginPass" placeholder="Contraseña" autocomplete="current-password">
+        <button onclick="login()">Ingresar</button>
+        
+        <p class="link" onclick="window.location.href='registro.html'">
+            ¿No tienes cuenta? Registrar
+        </p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const user = verificarSesion();
+            if (user) {
+                window.location.href = 'bienvenido.html';
+            }
+        });
+
+        async function login() {
+            const user = document.getElementById("loginUser").value.trim();
+            const pass = document.getElementById("loginPass").value;
+            const mensaje = document.getElementById("mensaje");
+
+            if (!user || !pass) {
+                mostrarMensaje(mensaje, "Complete todos los campos", "error");
+                return;
+            }
+
+            mostrarMensaje(mensaje, "Iniciando sesión...", "info");
+
+            const resultado = await loginUsuario(user, pass);
+
+            if (resultado.ok) {
+                mostrarMensaje(mensaje, "✅ Inicio de sesión exitoso!", "exito");
+                setTimeout(() => {
+                    window.location.href = 'bienvenido.html';
+                }, 1000);
+            } else {
+                mostrarMensaje(mensaje, resultado.msg, "error");
+            }
+        }
+
+        function mostrarMensaje(elemento, texto, tipo) {
+            elemento.textContent = texto;
+            elemento.className = `mensaje ${tipo}`;
+            elemento.style.display = 'block';
+        }
+
+        document.getElementById("loginPass").addEventListener("keypress", (e) => {
+            if (e.key === "Enter") login();
+        });
+    </script>
+
+</body>
+</html>
