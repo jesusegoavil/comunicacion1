@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>Calculadora VLSM</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
 * {
     margin: 0;
@@ -28,7 +29,7 @@ body {
 
 .container {
     max-width: 1200px;
-    margin: 0 auto;
+    margin: auto;
 }
 
 .header {
@@ -42,11 +43,6 @@ body {
     box-shadow: 0 8px 30px rgba(0,0,0,0.2);
 }
 
-.header h2 {
-    margin: 0;
-    color: #333;
-}
-
 .card {
     background: white;
     padding: 25px;
@@ -55,49 +51,41 @@ body {
     box-shadow: 0 8px 30px rgba(0,0,0,0.2);
 }
 
-input, select {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 12px;
-    border-radius: 10px;
-    border: 1px solid #bdbdbd;
-    font-size: 15px;
-}
-
-button {
-    padding: 12px;
-    width: 100%;
-    border: none;
-    border-radius: 12px;
-    font-weight: bold;
-    font-size: 16px;
-    cursor: pointer;
-    background: linear-gradient(135deg, #6a11cb, #2575fc);
-    color: white;
-}
-
-button.cerrar {
-    background: #d32f2f;
-    width: auto;
-    padding: 8px 15px;
-    font-size: 14px;
-}
-
 .input-group {
     display: grid;
     grid-template-columns: 2fr 1fr 1fr;
     gap: 12px;
 }
 
+input {
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #aaa;
+}
+
+button {
+    margin-top: 10px;
+    padding: 12px;
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button.cerrar {
+    background: #d32f2f;
+    width: auto;
+    padding: 8px 15px;
+}
+
 .subredes-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 12px;
-    margin: 20px 0;
-}
-
-.subred-input-group label {
-    font-weight: bold;
 }
 
 table {
@@ -114,22 +102,13 @@ th, td {
 }
 
 th { background: #ddd; }
-
-th:nth-child(1), td:nth-child(1) { background: #00bcd4; color: white; }
-th:nth-child(2), td:nth-child(2) { background: #ffeb3b; color: black; }
-th:nth-child(3), td:nth-child(3) { background: #607d8b; color: white; }
-th:nth-child(4), td:nth-child(4) { background: #4caf50; color: white; }
-th:nth-child(5), td:nth-child(5) { background: #9c27b0; color: white; }
-th:nth-child(6), td:nth-child(6) { background: #ff9800; color: white; }
-th:nth-child(7), td:nth-child(7) { background: #03a9f4; color: white; }
-th:nth-child(8), td:nth-child(8) { background: #e91e63; color: white; }
-th:nth-child(9), td:nth-child(9) { background: #f44336; color: white; }
-
 </style>
 </head>
+
 <body>
 
 <div class="container">
+
     <div class="header">
         <h2>🔢 Calculadora VLSM</h2>
         <button class="cerrar" onclick="volverInicio()">← Volver</button>
@@ -137,11 +116,11 @@ th:nth-child(9), td:nth-child(9) { background: #f44336; color: white; }
 
     <div class="card">
         <div class="input-group">
-            <input type="text" id="ipBase" placeholder="IP de red base (ej: 192.168.1.0)">
+            <input type="text" id="ipBase" placeholder="IP base (ej: 192.168.1.0)">
             <input type="number" id="prefijoBase" placeholder="Prefijo (ej: 24)">
-            <input type="number" id="numSubredes" placeholder="Número de subredes">
+            <input type="number" id="numSubredes" placeholder="N° Subredes">
         </div>
-        <button onclick="crearInputs()">Crear Campos de Subredes</button>
+        <button onclick="crearInputs()">Crear subredes</button>
     </div>
 
     <div id="subredesContainer" class="subredes-container"></div>
@@ -157,75 +136,112 @@ th:nth-child(9), td:nth-child(9) { background: #f44336; color: white; }
                 <tr>
                     <th>SR</th>
                     <th>Hosts</th>
-                    <th>Hosts encontrados</th>
+                    <th>Hosts útiles</th>
                     <th>Prefijo</th>
                     <th>Red</th>
                     <th>Máscara</th>
-                    <th>Primera</th>
-                    <th>Última</th>
+                    <th>Primera IP</th>
+                    <th>Última IP</th>
                     <th>Broadcast</th>
                 </tr>
             </thead>
             <tbody id="tablaVLSM"></tbody>
         </table>
     </div>
+
 </div>
 
 <script>
+// 🔹 Utilidades
+function validarIP(ip){
+    const p = ip.split(".");
+    if(p.length !== 4) return false;
+    return p.every(x => x !== "" && +x >= 0 && +x <= 255);
+}
+
 function ipToNumber(ip){
-    return ip.split('.').reduce((a,b)=>a*256+parseInt(b),0);
+    return ip.split('.').reduce((a,b)=>a*256+Number(b),0);
 }
 
 function numberToIp(num){
-    return [24,16,8,0].map(s=>(num>>s)&255).join('.');
+    return [24,16,8,0].map(s => (num >> s) & 255).join('.');
 }
 
 function calcularMascara(bitsHost){
-    let mask = 32 - bitsHost;
-    let m = [];
+    let maskBits = 32 - bitsHost;
+    let mask = [];
     for(let i=0;i<4;i++){
-        if(mask>=8){ m.push(255); mask-=8; }
-        else { m.push(256-Math.pow(2,8-mask)); mask=0; }
+        if(maskBits >= 8){ mask.push(255); maskBits -= 8; }
+        else { mask.push(256 - Math.pow(2, 8-maskBits)); maskBits = 0; }
     }
-    return m.join('.');
+    return mask.join('.');
 }
 
+function tamanoRed(prefijo){
+    return Math.pow(2, 32 - prefijo);
+}
+
+// 🔹 Crear inputs
 function crearInputs(){
     const n = numSubredes.value;
-    subredesContainer.innerHTML="";
+    subredesContainer.innerHTML = "";
     for(let i=1;i<=n;i++){
-        subredesContainer.innerHTML+=`
-        <div class="subred-input-group">
+        subredesContainer.innerHTML += `
+        <div>
             <label>Subred ${i}</label>
             <input type="number" id="hosts${i}" placeholder="Hosts requeridos">
         </div>`;
     }
-    btnCalcularCard.style.display="block";
+    btnCalcularCard.style.display = "block";
 }
 
+// 🔹 Cálculo VLSM con restricciones
 function calcularVLSM(){
+
+    if(!validarIP(ipBase.value)){
+        alert("❌ IP base inválida");
+        return;
+    }
+
+    const prefijo = parseInt(prefijoBase.value);
+    if(prefijo < 8 || prefijo > 30){
+        alert("❌ Prefijo inválido (8 a 30)");
+        return;
+    }
+
     let base = ipToNumber(ipBase.value);
-    let filas=[];
+    let filas = [];
+    let consumo = 0;
+
     for(let i=1;i<=numSubredes.value;i++){
-        let h=parseInt(document.getElementById("hosts"+i).value);
+        let h = parseInt(document.getElementById("hosts"+i).value);
+        if(isNaN(h) || h <= 0){
+            alert(`❌ Hosts inválidos en subred ${i}`);
+            return;
+        }
+        let bits = Math.ceil(Math.log2(h+2));
+        consumo += Math.pow(2, bits);
         filas.push(h);
     }
+
+    if(consumo > tamanoRed(prefijo)){
+        alert("❌ Las subredes no caben en la red base");
+        return;
+    }
+
     filas.sort((a,b)=>b-a);
+    tablaVLSM.innerHTML = "";
+    let red = base;
 
-    let tbody=document.getElementById("tablaVLSM");
-    tbody.innerHTML="";
-    let red=base;
+    filas.forEach((h,i)=>{
+        let bits = Math.ceil(Math.log2(h+2));
+        let total = Math.pow(2,bits);
 
-    filas.forEach((hosts,i)=>{
-        let bits=Math.ceil(Math.log2(hosts+2));
-        let total=Math.pow(2,bits);
-        let encontrados=total-2;
-
-        tbody.innerHTML+=`
+        tablaVLSM.innerHTML += `
         <tr>
             <td>${i+1}</td>
-            <td>${hosts}</td>
-            <td>${encontrados}</td>
+            <td>${h}</td>
+            <td>${total-2}</td>
             <td>/${32-bits}</td>
             <td>${numberToIp(red)}</td>
             <td>${calcularMascara(bits)}</td>
@@ -233,14 +249,15 @@ function calcularVLSM(){
             <td>${numberToIp(red+total-2)}</td>
             <td>${numberToIp(red+total-1)}</td>
         </tr>`;
-        red+=total;
+
+        red += total;
     });
 
-    resultadosCard.style.display="block";
+    resultadosCard.style.display = "block";
 }
 
 function volverInicio(){
-    window.location.href="bienvenido.html";
+    window.location.href = "bienvenido.html";
 }
 </script>
 
